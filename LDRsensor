@@ -1,0 +1,45 @@
+#define LDR 33
+#define LED_PIN 2 // สมมติว่าต่อ LED ที่ขา 2
+
+float filtered_LDR = 0;   // สำหรับ Low-pass Filter
+float alpha = 0.1;        // ค่าความนิ่ง (0.05 - 0.2) ยิ่งน้อยยิ่งนิ่งแต่จะตอบสนองช้าลง
+
+int threshold_ON = 1500;  // มืดกว่าค่านี้ -> เปิดไฟ
+int threshold_OFF = 1800; // สว่างกว่าค่านี้ -> ปิดไฟ (Hysteresis Gap)
+int led_state = 0;        // 0 = OFF, 100 = ON (สำหรับแสดงในกราฟ)
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(LED_PIN, OUTPUT);
+  // กำหนดค่าเริ่มต้นให้ Filter
+  filtered_LDR = analogRead(LDR);
+}
+
+void loop() {
+  int raw_LDR = analogRead(LDR);
+
+  // --- 1. Low-pass Filter (ทำให้กราฟสมูทขึ้น) ---
+  // สูตร: $y(n) = \alpha \cdot x(n) + (1 - \alpha) \cdot y(n-1)$
+  filtered_LDR = (alpha * raw_LDR) + ((1.0 - alpha) * filtered_LDR);
+
+  // --- 2. Hysteresis Logic ---
+  if (filtered_LDR < threshold_ON) {
+    led_state = 100; // เปิดไฟ
+  } else if (filtered_LDR > threshold_OFF) {
+    led_state = 0;   // ปิดไฟ
+  }
+  
+  digitalWrite(LED_PIN, (led_state == 100) ? HIGH : LOW);
+
+  // --- 3. การแสดงผลบน Serial Plotter ---
+  Serial.print("LDR_Filtered:");
+  Serial.print(filtered_LDR);
+  Serial.print(",");
+  Serial.print("Threshold_ON:");
+  Serial.print(threshold_ON);
+  Serial.print(",");
+  Serial.print("LED_Status:");
+  Serial.println(led_state);
+
+  delay(20);
+}
