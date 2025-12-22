@@ -1,0 +1,59 @@
+#define M1 23
+#define M2 22
+#define M3 19
+#define M4 18
+
+#define STEP_DELAY 3   // หน่วงเวลาแต่ละ step (ms)
+#define RUN_TIME 5000  // 5 วินาที
+
+// ลำดับการขับแบบ Full Step
+int stepCW[4][4] = {
+  {1, 0, 0, 0},
+  {0, 1, 0, 0},
+  {0, 0, 1, 0},
+  {0, 0, 0, 1}
+};
+
+int stepCCW[4][4] = {
+  {0, 0, 0, 1},
+  {0, 0, 1, 0},
+  {0, 1, 0, 0},
+  {1, 0, 0, 0}
+};
+
+void setup() {
+  pinMode(M1, OUTPUT);
+  pinMode(M2, OUTPUT);
+  pinMode(M3, OUTPUT);
+  pinMode(M4, OUTPUT);
+}
+
+void loop() {
+  // หมุนตามเข็ม
+  runMotor(stepCW);
+  delay(500);
+
+  // หมุนทวนเข็ม
+  runMotor(stepCCW);
+  delay(500);
+}
+
+void runMotor(int stepArray[4][4]) {
+  unsigned long startTime = millis();
+
+  while (millis() - startTime < RUN_TIME) {
+    for (int i = 0; i < 4; i++) {
+      digitalWrite(M1, stepArray[i][0]);
+      digitalWrite(M2, stepArray[i][1]);
+      digitalWrite(M3, stepArray[i][2]);
+      digitalWrite(M4, stepArray[i][3]);
+      delay(STEP_DELAY);
+    }
+  }
+
+  // ปิดขดลวด
+  digitalWrite(M1, LOW);
+  digitalWrite(M2, LOW);
+  digitalWrite(M3, LOW);
+  digitalWrite(M4, LOW);
+}
