@@ -1,0 +1,54 @@
+#define ENA   23
+#define IN1   22
+#define IN2   21
+
+#define LED_CW   19
+#define LED_CCW  18
+
+void setup() {
+  pinMode(ENA, OUTPUT);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+
+  pinMode(LED_CW, OUTPUT);
+  pinMode(LED_CCW, OUTPUT);
+
+  // เปิดใช้งานมอเตอร์
+  digitalWrite(ENA, HIGH);
+}
+
+void loop() {
+  // ===== หมุนตามเข็ม =====
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(LED_CW, HIGH);
+  digitalWrite(LED_CCW, LOW);
+
+  delay(5000);
+
+  // ===== หยุดเล็กน้อย =====
+  stopMotor();
+  delay(500);
+
+  // ===== หมุนทวนเข็ม =====
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+
+  digitalWrite(LED_CW, LOW);
+  digitalWrite(LED_CCW, HIGH);
+
+  delay(5000);
+
+  // ===== หยุดเล็กน้อย =====
+  stopMotor();
+  delay(500);
+}
+
+void stopMotor() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(LED_CW, LOW);
+  digitalWrite(LED_CCW, LOW);
+}
