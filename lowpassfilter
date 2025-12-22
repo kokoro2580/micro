@@ -1,0 +1,21 @@
+// Low-pass filter variables
+const int SENSOR_PIN = A0;
+int PrevOutput = 0;
+const int Weight = 4;   // Adjust as needed
+
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  int NewInput = analogRead(SENSOR_PIN);
+
+  int Output = (NewInput + (Weight * PrevOutput)) / (Weight + 1);
+
+  Serial.print("Output = ");
+  Serial.println(Output);
+
+  PrevOutput = Output;
+
+  delay(50);
+}
