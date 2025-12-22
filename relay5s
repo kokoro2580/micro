@@ -1,0 +1,20 @@
+#define RELAY_PIN 23     // ขา IO ที่ต่อเข้ากับรีเลย์
+#define INTERVAL 5000    // 5 วินาที (หน่วย ms)
+
+void setup() {
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, LOW);  // ค่าเริ่มต้น ปิดรีเลย์ (ขึ้นกับโมดูล)
+  Serial.begin(115200);
+}
+
+void loop() {
+  // เปิดรีเลย์
+  digitalWrite(RELAY_PIN, HIGH);
+  Serial.println("Relay ON");
+  delay(INTERVAL);
+
+  // ปิดรีเลย์
+  digitalWrite(RELAY_PIN, LOW);
+  Serial.println("Relay OFF");
+  delay(INTERVAL);
+}
