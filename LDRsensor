@@ -1,11 +1,11 @@
 #define LDR 33
-#define LED_PIN 2 // สมมติว่าต่อ LED ที่ขา 2
+#define LED_PIN 23 // สมมติว่าต่อ LED ที่ขา 2
 
 float filtered_LDR = 0;   // สำหรับ Low-pass Filter
 float alpha = 0.1;        // ค่าความนิ่ง (0.05 - 0.2) ยิ่งน้อยยิ่งนิ่งแต่จะตอบสนองช้าลง
 
-int threshold_ON = 1500;  // มืดกว่าค่านี้ -> เปิดไฟ
-int threshold_OFF = 1800; // สว่างกว่าค่านี้ -> ปิดไฟ (Hysteresis Gap)
+int threshold_ON = 4000;  // มืดกว่าค่านี้ -> เปิดไฟ
+int threshold_OFF = 3700; // สว่างกว่าค่านี้ -> ปิดไฟ (Hysteresis Gap)
 int led_state = 0;        // 0 = OFF, 100 = ON (สำหรับแสดงในกราฟ)
 
 void setup() {
@@ -23,9 +23,9 @@ void loop() {
   filtered_LDR = (alpha * raw_LDR) + ((1.0 - alpha) * filtered_LDR);
 
   // --- 2. Hysteresis Logic ---
-  if (filtered_LDR < threshold_ON) {
+  if (filtered_LDR > threshold_ON) {
     led_state = 100; // เปิดไฟ
-  } else if (filtered_LDR > threshold_OFF) {
+  } else if (filtered_LDR < threshold_OFF) {
     led_state = 0;   // ปิดไฟ
   }
   
