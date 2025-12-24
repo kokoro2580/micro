@@ -1,0 +1,138 @@
+#include <WiFi.h>
+#include <MQTT.h>
+
+/* ---------- WiFi ---------- */
+const char* ssid = "POCO X4 GT";
+const char* password = "88888888";
+
+/* ---------- MQTT ---------- */
+const char* broker = "test.mosquitto.org";
+const char* topic  = "group12/light2580";
+//const char* topic2  = "group12/lightstatus";
+
+/* ---------- PIN ---------- */
+#define LDR_PIN   32
+#define LED_PIN   17   // Relay / LED
+#define BTN_ON_PIN    22
+#define BTN_OFF_PIN   23
+#define BTN_AUTO_PIN  21
+
+
+/* ---------- VARIABLE ---------- */
+bool autoMode = true;
+bool lampState = false;
+
+bool lastOnBtn   = HIGH;
+bool lastOffBtn  = HIGH;
+bool lastAutoBtn = LOW;
+
+
+/* Hysteresis */
+int lightON  = 800;   // มืด → เปิดไฟ
+int lightOFF = 500;   // สว่าง → ปิดไฟ
+
+WiFiClient net;
+MQTTClient client;
+
+/* ---------- FUNCTION ---------- */
+void setLamp(bool state) {
+  lampState = state;
+  digitalWrite(LED_PIN, state ? HIGH : LOW);
+}
+
+void messageReceived(String &topic, String &payload) {
+  payload.trim();
+
+  if (payload == "AUTO") {
+    autoMode = true;
+  }
+  else if (payload == "MANUAL") {
+    autoMode = false;
+  }
+  else if (!autoMode) {
+    if (payload == "ON")  setLamp(true);
+    if (payload == "OFF") setLamp(false);
+  }
+}
+
+/* ---------- SETUP ---------- */
+void setup() {
+  Serial.begin(115200);
+  
+  pinMode(BTN_ON_PIN, INPUT_PULLUP);
+  pinMode(BTN_OFF_PIN, INPUT_PULLUP);
+  pinMode(BTN_AUTO_PIN, INPUT_PULLDOWN);
+
+
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+
+  client.begin(broker, net);
+  client.onMessage(messageReceived);
+
+  while (!client.connect("ESP32_LAMP_GROUP")) {
+    delay(1000);
+  }
+
+  client.subscribe(topic);
+}
+
+/* ---------- LOOP ---------- */
+void loop() {
+  client.loop();
+
+  int ldrValue = analogRead(LDR_PIN);
+
+  // อ่านสถานะปุ่ม
+  bool onBtn   = digitalRead(BTN_ON_PIN);
+  bool offBtn  = digitalRead(BTN_OFF_PIN);
+  bool autoBtn = digitalRead(BTN_AUTO_PIN);
+
+  /* ---------- EDGE DETECTION (กดครั้งเดียว) ---------- */
+
+  // ปุ่ม AUTO
+  if (lastAutoBtn == LOW && autoBtn == HIGH) {
+    autoMode = true;        // ค้างโหมด AUTO
+  }
+
+  // ปุ่ม ON
+  if (lastOnBtn == HIGH && onBtn == LOW) {
+    autoMode = false;       // เข้า MANUAL
+    setLamp(true);
+  }
+
+  // ปุ่ม OFF
+  if (lastOffBtn == HIGH && offBtn == LOW) {
+    autoMode = false;       // เข้า MANUAL
+    setLamp(false);
+  }
+
+  // บันทึกสถานะปุ่มเดิม
+  lastOnBtn   = onBtn;
+  lastOffBtn  = offBtn;
+  lastAutoBtn = autoBtn;
+
+  /* ---------- AUTO MODE (LDR + Hysteresis) ---------- */
+  if (autoMode) {
+    if (ldrValue > lightON && !lampState) {
+      setLamp(true);
+    }
+    if (ldrValue < lightOFF && lampState) {
+      setLamp(false);
+    }
+  }
+
+  /* ---------- MQTT STATUS ---------- */
+  String msg = "LDR=" + String(ldrValue) +
+               ",LAMP=" + (lampState ? "ON" : "OFF") +
+               ",MODE=" + (autoMode ? "AUTO" : "MANUAL");
+
+  client.publish(topic, msg);
+
+  delay(100);
+}
