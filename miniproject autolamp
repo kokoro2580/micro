@@ -8,7 +8,7 @@ const char* password = "88888888";
 /* ---------- MQTT ---------- */
 const char* broker = "test.mosquitto.org";
 const char* topic  = "group12/light2580";
-//const char* topic2  = "group12/lightstatus";
+const char* topic2  = "group12/lightvalue";
 
 /* ---------- PIN ---------- */
 #define LDR_PIN   32
@@ -134,5 +134,9 @@ void loop() {
 
   client.publish(topic, msg);
 
-  delay(100);
+  String msg1 = String(ldrValue);
+
+  client.publish(topic2, msg1);
+
+  delay(500);
 }
