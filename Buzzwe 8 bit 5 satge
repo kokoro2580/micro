@@ -1,0 +1,141 @@
+const int buzzerPin = 18; 
+const int buttonPin = 19;   
+
+
+#define NOTE_G3  196
+#define NOTE_C4  262
+#define NOTE_E4  330
+#define NOTE_F4  349
+#define NOTE_FS4 370
+#define NOTE_G4  392
+#define NOTE_GS4 415
+#define NOTE_A4  440
+#define NOTE_AS4 466 
+#define NOTE_B4  494
+#define NOTE_C5  523
+#define NOTE_CS5 554
+#define NOTE_D5  587
+#define NOTE_DS5 622 
+#define NOTE_E5  659
+#define NOTE_F5  698
+#define NOTE_FS5 740
+#define NOTE_G5  784
+#define REST     0
+#define NOTE_DS4 311
+
+
+int melody[] = {
+ NOTE_G4, NOTE_G4, NOTE_G4, NOTE_DS4, NOTE_AS4, NOTE_G4, NOTE_DS4, NOTE_AS4, NOTE_G4, 
+  REST,NOTE_D5, NOTE_D5, NOTE_D5, NOTE_DS5, NOTE_AS4, NOTE_FS4, NOTE_DS4, NOTE_AS4, NOTE_G4
+};
+
+
+int noteDurations[] = {
+  4, 4, 4, 8, 8, 4, 8, 8, 2,
+  8,4, 4, 4, 8, 8, 4, 8, 8, 2
+};
+
+int totalNotes = sizeof(melody) / sizeof(int);
+
+hw_timer_t *timer = NULL;
+volatile bool toggle = false;
+volatile int speedLevel = 2; 
+
+const char* speedNames[] = {"Very Slow", "Slow", "Normal", "Fast", "Very Fast"};
+float speedMultipliers[] = {2.0, 1.5, 1.0, 0.75, 0.5};
+
+
+volatile unsigned long lastButtonTime = 0; 
+const unsigned long debounceDelay = 200; 
+
+
+void ARDUINO_ISR_ATTR onTimer() {
+  toggle = !toggle;
+  digitalWrite(buzzerPin, toggle);
+}
+
+
+void ARDUINO_ISR_ATTR onButtonPress() {
+  unsigned long currentTime = millis();
+  
+  if (currentTime - lastButtonTime > debounceDelay) {
+    speedLevel++;
+    if (speedLevel > 4) {
+      speedLevel = 0; 
+    }
+    lastButtonTime = currentTime;
+    
+  }
+}
+
+
+void stopTone() {
+  if (timer) {
+    timerStop(timer); 
+  }
+  digitalWrite(buzzerPin, LOW); 
+}
+
+void playTone(int frequency) {
+  if (frequency == 0) { 
+    stopTone();
+    return;
+  }
+
+  uint64_t alarmVal = 1000000 / (2 * frequency);
+
+  
+  timerAlarm(timer, alarmVal, true, 0);
+  timerStart(timer);
+}
+
+
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(buzzerPin, OUTPUT);
+  
+  pinMode(buttonPin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(buttonPin), onButtonPress, FALLING);
+
+ 
+  timer = timerBegin(1000000);
+  timerAttachInterrupt(timer, &onTimer);
+
+  Serial.println("System Ready. Press BOOT button to change speed.");
+}
+
+
+void loop() {
+  static int lastPrintedSpeed = -1;
+
+  if (lastPrintedSpeed != speedLevel) {
+    Serial.print("Current Speed: ");
+    Serial.println(speedNames[speedLevel]);
+    lastPrintedSpeed = speedLevel;
+  }
+
+  
+  for (int i = 0; i < totalNotes; i++) {
+    
+    
+    if (lastPrintedSpeed != speedLevel) {
+       Serial.print("Speed Changed to: ");
+       Serial.println(speedNames[speedLevel]);
+       lastPrintedSpeed = speedLevel;
+    }
+
+    
+    int durationBase = 1200 / noteDurations[i]; // แปลงค่าจังหวะเป็น ms
+    int realDuration = durationBase * speedMultipliers[speedLevel];
+
+    playTone(melody[i]);
+    
+    delay(realDuration);
+
+    stopTone();
+    delay(realDuration * 0.30); // หยุดพัก 30% ของความยาวโน๊ต
+  }
+  
+  delay(1000);
+}
