@@ -1,0 +1,50 @@
+#define SERVO_PIN   25
+#define LED_PIN     26
+#define BUTTON_PIN  27
+
+// PWM setting
+const int pwmFreq = 50;        // 50 Hz (20 ms)
+const int pwmResolution = 8;   // 8-bit
+const int servoChannel = 0;
+
+// duty สำหรับ servo
+const int SERVO_0_DEG  = 13;
+const int SERVO_90_DEG = 19;
+
+bool ledState = LOW;
+bool servoState = LOW;
+bool lastButtonState = HIGH;
+
+void setup()
+{
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+  // ตั้งค่า PWM สำหรับ Servo
+  ledcAttach(SERVO_PIN, pwmFreq, pwmResolution);
+  ledcWrite(SERVO_PIN, SERVO_0_DEG);  // เริ่มที่ 0°
+}
+
+void loop()
+{
+  bool currentButton = digitalRead(BUTTON_PIN);
+
+  // ตรวจจับการกดปุ่ม (HIGH -> LOW)
+  if (lastButtonState == HIGH && currentButton == LOW)
+  {
+    // Toggle LED
+    ledState = !ledState;
+    digitalWrite(LED_PIN, ledState);
+
+    // Toggle Servo (0° <-> 90°)
+    servoState = !servoState;
+    if (servoState)
+      ledcWrite(SERVO_PIN, SERVO_90_DEG);
+    else
+      ledcWrite(SERVO_PIN, SERVO_0_DEG);
+
+    delay(250); // debounce แบบง่าย
+  }
+
+  lastButtonState = currentButton;
+}
