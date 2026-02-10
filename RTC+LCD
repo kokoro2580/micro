@@ -1,0 +1,47 @@
+#include <Wire.h>
+#include <RTClib.h>
+#include <LCD_I2C.h>
+
+RTC_DS1307 rtc;
+LCD_I2C lcd(0x27, 16, 2);
+
+void setup() {
+  Wire.begin();
+  Serial.begin(9600);
+
+  lcd.begin();
+  lcd.backlight();
+
+  if (!rtc.begin()) {
+    lcd.print("RTC NOT FOUND");
+    while (1);
+  }
+
+  // ตั้งเวลา (ใช้ครั้งแรกครั้งเดียว)
+  // rtc.adjust(DateTime(__DATE__, __TIME__));
+}
+
+void loop() {
+  DateTime now = rtc.now();
+
+  lcd.setCursor(0, 0);
+  lcd.print("Date: ");
+  lcd.print(now.day());
+  lcd.print("/");
+  lcd.print(now.month());
+  lcd.print("/");
+  lcd.print(now.year());
+
+  lcd.setCursor(0, 1);
+  lcd.print("Time: ");
+  if (now.hour() < 10) lcd.print("0");
+  lcd.print(now.hour());
+  lcd.print(":");
+  if (now.minute() < 10) lcd.print("0");
+  lcd.print(now.minute());
+  lcd.print(":");
+  if (now.second() < 10) lcd.print("0");
+  lcd.print(now.second());
+
+  delay(1000);
+}
