@@ -1,0 +1,48 @@
+#define LED_PIN     16
+#define BUTTON_PIN  32
+
+const int freq = 1000;        // PWM frequency
+const int resolution = 8;    // 8-bit (0–255)
+
+int level = 0;
+
+// 5 ระดับความสว่าง
+int dutyLevels[5] = {0, 64, 128, 192, 255};
+
+bool lastButtonState = HIGH;
+unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 200;
+
+void setup()
+{
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+  // ตั้งค่า PWM
+  ledcAttach(LED_PIN, freq, resolution);
+  ledcWrite(LED_PIN, dutyLevels[level]);
+}
+
+void loop()
+{
+  bool reading = digitalRead(BUTTON_PIN);
+
+  // debounce
+  if (reading != lastButtonState)
+  {
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay)
+  {
+    // ตรวจจับขอบขาลง (กดปุ่ม)
+    if (lastButtonState == HIGH && reading == LOW)
+    {
+      level++;
+      if (level >= 5) level = 0;
+
+      ledcWrite(LED_PIN, dutyLevels[level]);
+    }
+  }
+
+  lastButtonState = reading;
+}
